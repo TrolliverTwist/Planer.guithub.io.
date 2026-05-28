@@ -1,0 +1,1557 @@
+<!DOCTYPE html>
+<html lang="de">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Couple Planner MVP</title>
+  <link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%234b5563'/%3E%3Cpath d='M20 36c0-6 4-10 12-10s12 4 12 10v2H20z' fill='white'/%3E%3Ccircle cx='24' cy='26' r='4' fill='white'/%3E%3Ccircle cx='40' cy='26' r='4' fill='white'/%3E%3C/svg%3E" />
+  <style>
+    :root {
+      --bg: #fafafa;
+      --card: #ffffff;
+      --card-border: rgba(107,114,128,0.28);
+      --text: #1f2937;
+      --muted: #6b7280;
+      --accent: #6b7280;
+      --accent-soft: #f3f4f6;
+      --accent-strong: #374151;
+      --green: #4b5563;
+      --green-soft: #f3f4f6;
+      --shadow: none;
+      --radius: 18px;
+    }
+
+    * { box-sizing: border-box; }
+    body {
+      margin: 0;
+      min-height: 100vh;
+      color: var(--text);
+      background: #fafafa;
+      font-family: Inter, system-ui, sans-serif;
+    }
+
+    .shell { max-width: 1200px; margin: 0 auto; padding: 16px; }
+
+    .topbar {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .topbar h1 {
+      margin:5px 0 0;
+      font-size:2rem;
+    }
+
+    .subcopy {
+      margin:6px 0 0;
+      color:var(--muted);
+      max-width:640px;
+    }
+
+    .eyebrow, .section-kicker {
+      margin:0;
+      color:#4b5563;
+      text-transform:uppercase;
+      letter-spacing:0.24em;
+      font-size:0.6rem;
+      font-weight:800;
+    }
+
+    .top-actions {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .pill {
+      display:inline-flex;
+      align-items:center;
+      padding:0.34rem 0.55rem;
+      border-radius:999px;
+      font-size:0.62rem;
+      font-weight:800;
+      letter-spacing:0.18em;
+      text-transform:uppercase;
+      border:1px solid rgba(107,114,128,0.28);
+      background:#fff;
+      color:#4b5563;
+    }
+
+    .pill.brand { color:#1f2937; background:#f3f4f6; border-color:#d1d5db; }
+
+    .grid {
+      display:grid;
+      gap:16px;
+    }
+
+    .grid.hero {
+      grid-template-columns: minmax(0, 1.18fr) minmax(0, 0.82fr);
+      gap:18px;
+      margin-bottom:18px;
+      align-items:stretch;
+    }
+
+    .grid.dashboard {
+      grid-template-columns: repeat(3, minmax(0, 1fr));
+      gap:18px;
+      align-items:stretch;
+    }
+
+    .card {
+      background: var(--card);
+      border:1px solid var(--card-border);
+      border-radius:var(--radius);
+      box-shadow: none;
+      padding:16px;
+      min-height:100%;
+    }
+
+    .card-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:12px;
+      margin-bottom:14px;
+    }
+
+    .card-header h2 { margin:3px 0 0; font-size:1.1rem; }
+
+    .person-row {
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+
+    .person {
+      display:flex;
+      align-items:center;
+      gap:10px;
+      border-radius:14px;
+      padding:11px;
+      border:1px solid rgba(107,114,128,0.24);
+      background:#fff;
+      cursor:pointer;
+      transition: border-color .2s ease, transform .2s ease;
+    }
+
+    .person.selected {
+      border-color: #4b5563;
+      transform: translateY(-1px);
+    }
+
+    .avatar {
+      width: 30px;
+      height:30px;
+      border-radius:50%;
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      font-weight:800;
+      color:#fff;
+      background:#111827;
+      font-size:0.78rem;
+    }
+
+    .person h3, .person p { margin:0; }
+    .person p { margin-top:2px; color:var(--muted); font-size:0.72rem; }
+
+    .legend-row {
+      display:grid;
+      grid-template-columns:repeat(4, minmax(0,1fr));
+      gap:8px;
+      margin-top:12px;
+    }
+
+    .legend-chip {
+      display:flex;
+      align-items:center;
+      justify-content:center;
+      gap:7px;
+      border-radius:999px;
+      padding:0.34rem 0.55rem;
+      color:#56657a;
+      font-size:0.66rem;
+      border:1px solid rgba(148,163,184,0.22);
+      min-width:0;
+    }
+
+    .legend-chip.work { background:#f8fafc; border-color:#cbd5e1; color:#475569; }
+    .legend-chip.private { background:#f1f5f9; border-color:#d1d5db; color:#64748b; }
+    .legend-chip.shared { background:#e5e7eb; border-color:#9ca3af; color:#4b5563; }
+    .legend-chip.vacation { background:#d1d5db; border-color:#6b7280; color:#374151; }
+
+    .legend-dot {
+      width:9px;
+      height:9px;
+      border-radius:999px;
+      display:inline-block;
+      flex-shrink:0;
+    }
+
+    .legend-dot.work { background:#64748b; }
+    .legend-dot.private { background:#9ca3af; }
+    .legend-dot.shared { background:#4b5563; }
+    .legend-dot.vacation { background:#1f2937; }
+
+    .summary-grid {
+      display:grid;
+      grid-template-columns:repeat(2, minmax(0,1fr));
+      gap:10px;
+      grid-auto-rows:1fr;
+    }
+
+    .summary-item {
+      border-radius:14px;
+      padding:12px;
+      border:1px solid rgba(107,114,128,0.24);
+      background:#fff;
+      display:flex;
+      flex-direction:column;
+      gap:4px;
+      min-height:72px;
+      justify-content:center;
+    }
+
+    .summary-item strong {
+      font-size:1.6rem;
+    }
+
+    .summary-item span {
+      color:var(--muted);
+      font-size:0.72rem;
+    }
+
+    .share-block {
+      margin-top:12px;
+      padding-top:12px;
+      border-top:1px solid rgba(148,163,184,0.2);
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .share-block-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:center;
+      gap:10px;
+    }
+
+    .share-block-header h3 {
+      margin:4px 0 0;
+      font-size:0.98rem;
+    }
+
+    .shared-connections-list {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .invite-item {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      align-items:center;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,0.22);
+      padding:10px 11px;
+      background:#fff;
+    }
+
+    .invite-item.pending {
+      border-color: rgba(107,114,128,0.38);
+      background:#f8fafc;
+    }
+
+    .invite-item.verified {
+      border-color: rgba(75,85,99,0.44);
+      background:#f8fafc;
+    }
+
+    .invite-email {
+      font-size:0.82rem;
+      font-weight:800;
+      color:var(--text);
+    }
+
+    .invite-state-text {
+      margin-top:3px;
+      color:var(--muted);
+      font-size:0.68rem;
+    }
+
+    .invite-modal {
+      position:fixed;
+      inset:0;
+      background:rgba(17,24,39,0.58);
+      display:none;
+      align-items:center;
+      justify-content:center;
+      padding:16px;
+      z-index:1000;
+    }
+
+    .invite-modal.open {
+      display:flex;
+    }
+
+    .invite-modal-card {
+      width:min(640px, 100%);
+      background:#fff;
+      border-radius:20px;
+      border:1px solid rgba(107,114,128,0.28);
+      padding:18px;
+      box-shadow:none;
+    }
+
+    .invite-modal-header {
+      display:flex;
+      justify-content:space-between;
+      align-items:flex-start;
+      gap:10px;
+      margin-bottom:10px;
+    }
+
+    .invite-modal-header h2 {
+      margin:3px 0 0;
+      font-size:1.08rem;
+    }
+
+    .invite-modal-subcopy {
+      margin:6px 0 0;
+      color:var(--muted);
+      font-size:0.78rem;
+    }
+
+    .invite-form-grid {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .invite-form-grid input {
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,0.28);
+      padding:10px 11px;
+      font-size:0.9rem;
+      background:#fff;
+      color:var(--text);
+    }
+
+    .invite-status-message {
+      margin-top:10px;
+      border-radius:10px;
+      padding:10px 11px;
+      background:#f8fafc;
+      border:1px solid rgba(148,163,184,0.22);
+      color:#4b5563;
+      font-size:0.72rem;
+    }
+
+    .invite-list {
+      margin-top:12px;
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .input-row, .event-form, .vacation-form {
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .input-row {
+      display:grid;
+      grid-template-columns:1fr auto;
+      align-items:center;
+      gap:10px;
+    }
+
+    .input-row input, .field-group input, .field-group select {
+      width:100%;
+      border-radius:12px;
+      border:1px solid rgba(148,163,184,0.28);
+      padding:10px 11px;
+      font-size:0.9rem;
+      color: var(--text);
+      background:#fff;
+    }
+
+    .field-grid {
+      display:grid;
+      grid-template-columns:repeat(2,1fr);
+      gap:10px;
+    }
+
+    .field-group label {
+      display:block;
+      margin-bottom:6px;
+      font-size:0.63rem;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:0.18em;
+      color:#62748f;
+    }
+
+    .primary-button {
+      border:1px solid #374151;
+      border-radius:10px;
+      padding:9px 11px;
+      font-size:0.84rem;
+      font-weight:800;
+      background:#111827;
+      color:#fff;
+      cursor:pointer;
+      box-shadow:none;
+    }
+
+    .check-list, .calendar-feed, .vacation-list {
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+      margin-top:12px;
+    }
+
+    .shopping-item, .event-item, .vacation-item {
+      display:flex;
+      align-items:center;
+      justify-content:space-between;
+      gap:10px;
+      border-radius:12px;
+      padding:10px 11px;
+      border:1px solid rgba(107,114,128,0.22);
+      background:#fff;
+    }
+
+    .shopping-item.done {
+      opacity:0.6;
+    }
+
+    .item-left, .event-main, .vacation-main {
+      display:flex;
+      align-items:center;
+      gap:10px;
+    }
+
+    .item-left { flex:1; }
+
+    .shopping-item input[type="checkbox"] { width:18px; height:18px; accent-color: var(--accent); }
+    .shopping-item .title { font-weight:700; }
+    .meta-text, .tiny-text, .vacation-copy { color:var(--muted); font-size:0.72rem; }
+
+    .delete-button, .ghost-button {
+      border:1px solid rgba(107,114,128,0.32);
+      background:#f9fafb;
+      color:#4b5563;
+      border-radius:999px;
+      padding:5px 8px;
+      cursor:pointer;
+      font-size:0.66rem;
+      font-weight:800;
+    }
+
+    .event-item { align-items:flex-start; }
+    .event-main { align-items:flex-start; flex:1; }
+    .event-dot {
+      width:10px;
+      height:10px;
+      margin-top:6px;
+      border-radius:999px;
+    }
+
+    .event-details h3, .vacation-main h3 { margin:0; font-size:0.96rem; }
+    .event-details p, .vacation-main p { margin:2px 0 0; }
+
+    .event-chip {
+      display:inline-flex;
+      align-items:center;
+      padding:0.24rem 0.46rem;
+      border-radius:999px;
+      font-size:0.56rem;
+      font-weight:800;
+      text-transform:uppercase;
+      letter-spacing:0.12em;
+    }
+
+    .event-chip.work { background:#f3f4f6; color:#374151; }
+    .event-chip.private { background:#e5e7eb; color:#4b5563; }
+    .event-chip.shared { background:#d1d5db; color:#1f2937; }
+    .event-chip.other { background:#f9fafb; color:#4b5563; }
+
+    .vacation-item { display:grid; grid-template-columns:1fr auto; align-items:center; }
+    .vacation-item.proposed {
+      border-color: rgba(107,114,128,0.34);
+      background:#fff;
+    }
+    .vacation-item.confirmed {
+      border-color: rgba(75,85,99,0.46);
+      background:#f8fafc;
+    }
+
+    .confirm-button {
+      border:1px solid #374151;
+      border-radius:999px;
+      padding:7px 9px;
+      font-size:0.68rem;
+      font-weight:800;
+      cursor:pointer;
+      background:#111827;
+      color:#fff;
+    }
+
+    .confirm-button:disabled {
+      opacity:0.66;
+      cursor:not-allowed;
+    }
+
+    .brainstorm-row {
+      margin-top:16px;
+    }
+
+    .brainstorm-layout {
+      display:grid;
+      grid-template-columns: 0.82fr 1.18fr;
+      gap:14px;
+      align-items:start;
+    }
+
+    .brainstorm-topic-list {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .brainstorm-topic-button {
+      border-radius:12px;
+      border:1px solid rgba(107,114,128,0.24);
+      background:#fff;
+      color:var(--text);
+      padding:10px 11px;
+      text-align:left;
+      cursor:pointer;
+      font-size:0.84rem;
+      font-weight:700;
+    }
+
+    .brainstorm-topic-button.active {
+      border-color:#374151;
+      background:#f3f4f6;
+    }
+
+    .brainstorm-detail {
+      display:flex;
+      flex-direction:column;
+      gap:10px;
+    }
+
+    .brainstorm-header h3 {
+      margin:0;
+      font-size:1.05rem;
+    }
+
+    .brainstorm-entry-form {
+      display:grid;
+      grid-template-columns:1fr auto;
+      gap:10px;
+    }
+
+    .brainstorm-note-list {
+      display:flex;
+      flex-direction:column;
+      gap:8px;
+    }
+
+    .brainstorm-note {
+      border-radius:12px;
+      border:1px solid rgba(107,114,128,0.22);
+      background:#fff;
+      padding:11px;
+      display:flex;
+      flex-direction:column;
+      gap:9px;
+    }
+
+    .brainstorm-note.highlighted {
+      border-color:#6b7280;
+      background:#f8fafc;
+    }
+
+    .brainstorm-note-header {
+      display:flex;
+      justify-content:space-between;
+      gap:10px;
+      align-items:flex-start;
+    }
+
+    .brainstorm-note p {
+      margin:0;
+      color:var(--text);
+      font-size:0.84rem;
+    }
+
+    .brainstorm-note-actions {
+      display:flex;
+      flex-wrap:wrap;
+      gap:6px;
+      align-items:center;
+    }
+
+    .brainstorm-vote-row {
+      display:flex;
+      align-items:center;
+      gap:6px;
+    }
+
+    .vote-button {
+      border-radius:999px;
+      border:1px solid rgba(107,114,128,0.28);
+      background:#fff;
+      color:#4b5563;
+      font-weight:800;
+      padding:5px 8px;
+      cursor:pointer;
+    }
+
+    .vote-score {
+      min-width:24px;
+      text-align:center;
+      font-size:0.72rem;
+      font-weight:800;
+      color:#1f2937;
+    }
+
+    .brainstorm-comment-list {
+      display:flex;
+      flex-direction:column;
+      gap:6px;
+    }
+
+    .brainstorm-comment {
+      border-radius:10px;
+      background:#fff;
+      border:1px solid rgba(107,114,128,0.18);
+      padding:8px 10px;
+      color:var(--muted);
+      font-size:0.74rem;
+    }
+
+    .brainstorm-comment-form {
+      display:flex;
+      gap:8px;
+    }
+
+    .brainstorm-empty {
+      border-radius:12px;
+      border:1px dashed rgba(107,114,128,0.5);
+      padding:12px;
+      color:var(--muted);
+      background:#fff;
+      font-size:0.82rem;
+    }
+
+    @media (max-width: 980px) {
+      .grid.hero, .grid.dashboard { grid-template-columns:1fr; }
+      .topbar { align-items:flex-start; flex-direction:column; }
+    }
+  </style>
+</head>
+<body>
+  <div class="shell">
+    <header class="topbar">
+      <div>
+        <p class="eyebrow">Couple Planner MVP</p>
+        <h1>Gemeinsamer Planungsraum</h1>
+        <p class="subcopy">Einkaufen, Termine und Urlaub gemeinsam mit klarer Struktur, wenig UI und Live-Sync über den Browser-Speicher.</p>
+      </div>
+      <div class="top-actions">
+        <div class="pill brand">2 Personen</div>
+        <div class="pill">local sync</div>
+      </div>
+    </header>
+
+    <section class="grid hero">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">Shared Space</p>
+            <h2>Couple Space</h2>
+          </div>
+          <span class="pill">Luca & Lea</span>
+        </div>
+
+        <div class="person-row">
+          <div class="person selected" data-user-id="user_1">
+            <div class="avatar">L</div>
+            <div>
+              <h3>Luca</h3>
+              <p>Erstellt Events und Vorschläge</p>
+            </div>
+          </div>
+
+          <div class="person" data-user-id="user_2">
+            <div class="avatar">L</div>
+            <div>
+              <h3>Lea</h3>
+              <p>Bestätigt Urlaubsvorschläge</p>
+            </div>
+          </div>
+        </div>
+
+        <div class="legend-row">
+          <div class="legend-chip work"><span class="legend-dot work"></span> Arbeit</div>
+          <div class="legend-chip private"><span class="legend-dot private"></span> Privat</div>
+          <div class="legend-chip shared"><span class="legend-dot shared"></span> Gemeinsam</div>
+          <div class="legend-chip vacation"><span class="legend-dot vacation"></span> Urlaub</div>
+        </div>
+
+        <div class="share-block">
+          <div class="share-block-header">
+            <div>
+              <p class="section-kicker">Freunde</p>
+              <h3>Verbindungen</h3>
+            </div>
+            <button id="inviteOpenButton" class="primary-button" type="button">+ Einladung senden</button>
+          </div>
+          <p class="meta-text">Einladungen werden per E-Mail versendet. Nach Bestätigung ist der Kontakt direkt in der App aktiv.</p>
+          <div id="sharedConnectionsList" class="shared-connections-list"></div>
+        </div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">Überblick</p>
+            <h2>Quick Stats</h2>
+          </div>
+        </div>
+
+        <div class="summary-grid">
+          <div class="summary-item">
+            <strong id="shoppingCount">0</strong>
+            <span>Einkaufsitems</span>
+          </div>
+          <div class="summary-item">
+            <strong id="eventCount">0</strong>
+            <span>Kalenderevents</span>
+          </div>
+          <div class="summary-item">
+            <strong id="vacationCount">0</strong>
+            <span>Urlaubsblöcke</span>
+          </div>
+          <div class="summary-item">
+            <strong id="confirmedCount">0</strong>
+            <span>bestätigt</span>
+          </div>
+        </div>
+      </article>
+    </section>
+
+    <section class="grid dashboard">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">To-do</p>
+            <h2>Einkaufsliste</h2>
+          </div>
+          <span class="pill brand">Live</span>
+        </div>
+
+        <form id="shoppingForm" class="input-row">
+          <input type="text" id="shoppingInput" placeholder="z. B. Kaffee" maxlength="60" required />
+          <button class="primary-button" type="submit">+ Add item</button>
+        </form>
+
+        <ul id="shoppingList" class="check-list"></ul>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">Agenda</p>
+            <h2>Kalender</h2>
+          </div>
+          <span class="pill">Monatsansicht</span>
+        </div>
+
+        <form id="eventForm" class="event-form">
+          <div class="field-group">
+            <label for="eventTitle">Titel</label>
+            <input type="text" id="eventTitle" placeholder="z. B. Arzttermin" maxlength="40" required />
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="eventDate">Datum</label>
+              <input type="date" id="eventDate" required />
+            </div>
+            <div class="field-group">
+              <label for="eventStart">Uhrzeit</label>
+              <input type="time" id="eventStart" value="18:00" required />
+            </div>
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="eventType">Typ</label>
+              <select id="eventType">
+                <option value="work">Arbeit</option>
+                <option value="private">Privat</option>
+                <option value="shared">Gemeinsam</option>
+                <option value="other">Sonstiges</option>
+              </select>
+            </div>
+            <div class="field-group">
+              <label for="eventDuration">Dauer</label>
+              <select id="eventDuration">
+                <option value="60">1 h</option>
+                <option value="120">2 h</option>
+                <option value="180">3 h</option>
+                <option value="240">4 h</option>
+              </select>
+            </div>
+          </div>
+
+          <button class="primary-button" type="submit">Event anlegen</button>
+        </form>
+
+        <div id="calendarFeed" class="calendar-feed"></div>
+      </article>
+
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">Urlaub</p>
+            <h2>Urlaubsblock</h2>
+          </div>
+          <span class="pill">Vorschlag & Fix</span>
+        </div>
+
+        <form id="vacationForm" class="vacation-form">
+          <div class="field-group">
+            <label for="vacationTitle">Titel</label>
+            <input type="text" id="vacationTitle" value="Urlaub" maxlength="30" />
+          </div>
+
+          <div class="field-grid">
+            <div class="field-group">
+              <label for="vacationStart">Start</label>
+              <input type="date" id="vacationStart" required />
+            </div>
+            <div class="field-group">
+              <label for="vacationEnd">Ende</label>
+              <input type="date" id="vacationEnd" required />
+            </div>
+          </div>
+
+          <button class="primary-button" type="submit">Urlaubsblock vorschlagen</button>
+        </form>
+
+        <div id="vacationList" class="vacation-list"></div>
+      </article>
+    </section>
+
+    <section class="brainstorm-row">
+      <article class="card">
+        <div class="card-header">
+          <div>
+            <p class="section-kicker">Ideenraum</p>
+            <h2>Brainstorming</h2>
+          </div>
+          <span class="pill brand">Themen & Ideen</span>
+        </div>
+
+        <form id="brainstormTopicForm" class="input-row">
+          <input type="text" id="brainstormTopicInput" placeholder="z. B. Geschenk Papa" maxlength="40" required />
+          <button class="primary-button" type="submit">Thema erstellen</button>
+        </form>
+
+        <div class="brainstorm-layout">
+          <div>
+            <div class="section-kicker" style="margin-bottom:8px;">Themen</div>
+            <div id="brainstormTopicList" class="brainstorm-topic-list"></div>
+          </div>
+
+          <div class="brainstorm-detail" id="brainstormDetail"></div>
+        </div>
+      </article>
+    </section>
+  </div>
+
+  <div class="invite-modal" id="inviteModal">
+    <div class="invite-modal-card">
+      <div class="invite-modal-header">
+        <div>
+          <p class="section-kicker">Teilen</p>
+          <h2>Freund*in einladen</h2>
+          <p class="invite-modal-subcopy">Gib eine E-Mail-Adresse ein. Die Einladung wird versendet und erst nach Bestätigung in die App aufgenommen.</p>
+        </div>
+        <button class="delete-button" id="closeInviteModal" type="button">Schließen</button>
+      </div>
+
+      <form id="inviteForm" class="invite-form-grid">
+        <input type="email" id="inviteEmailInput" placeholder="freund@example.com" required />
+        <button class="primary-button" type="submit">Einladung senden</button>
+      </form>
+
+      <div id="inviteStatusMessage" class="invite-status-message" hidden></div>
+
+      <div class="invite-list" id="inviteList"></div>
+    </div>
+  </div>
+
+  <script>
+    const STORAGE_KEY = 'couple-planner-html-v1';
+    const state = loadState();
+    const elements = {
+      shoppingForm: document.getElementById('shoppingForm'),
+      shoppingInput: document.getElementById('shoppingInput'),
+      shoppingList: document.getElementById('shoppingList'),
+      eventForm: document.getElementById('eventForm'),
+      eventTitle: document.getElementById('eventTitle'),
+      eventDate: document.getElementById('eventDate'),
+      eventStart: document.getElementById('eventStart'),
+      eventType: document.getElementById('eventType'),
+      eventDuration: document.getElementById('eventDuration'),
+      calendarFeed: document.getElementById('calendarFeed'),
+      vacationForm: document.getElementById('vacationForm'),
+      vacationTitle: document.getElementById('vacationTitle'),
+      vacationStart: document.getElementById('vacationStart'),
+      vacationEnd: document.getElementById('vacationEnd'),
+      vacationList: document.getElementById('vacationList'),
+      brainstormTopicForm: document.getElementById('brainstormTopicForm'),
+      brainstormTopicInput: document.getElementById('brainstormTopicInput'),
+      brainstormTopicList: document.getElementById('brainstormTopicList'),
+      brainstormDetail: document.getElementById('brainstormDetail'),
+      inviteOpenButton: document.getElementById('inviteOpenButton'),
+      inviteModal: document.getElementById('inviteModal'),
+      closeInviteModal: document.getElementById('closeInviteModal'),
+      inviteForm: document.getElementById('inviteForm'),
+      inviteEmailInput: document.getElementById('inviteEmailInput'),
+      inviteStatusMessage: document.getElementById('inviteStatusMessage'),
+      inviteList: document.getElementById('inviteList'),
+      sharedConnectionsList: document.getElementById('sharedConnectionsList')
+    };
+
+    function loadState() {
+      const stored = localStorage.getItem(STORAGE_KEY);
+      if (stored) {
+        try {
+          return JSON.parse(stored);
+        } catch (e) {
+          console.warn('Stored state invalid, resetting');
+        }
+      }
+
+      return {
+        activeUserId: 'user_1',
+        items: [
+          { itemId: '1', title: 'Kaffee', createdBy: 'user_1', isDone: false },
+          { itemId: '2', title: 'Frischkäse', createdBy: 'user_2', isDone: true }
+        ],
+        events: [
+          { eventId: 'e1', title: 'Team-Meeting', startDateTime: '2026-05-29T09:00:00', endDateTime: '2026-05-29T10:00:00', type: 'work', createdBy: 'user_1' },
+          { eventId: 'e2', title: 'Dinner mit Freunden', startDateTime: '2026-05-31T19:00:00', endDateTime: '2026-05-31T21:00:00', type: 'shared', createdBy: 'user_2' }
+        ],
+        vacations: [
+          { vacationId: 'v1', title: 'Urlaub', startDate: '2026-06-10', endDate: '2026-06-16', status: 'proposed', createdBy: 'user_1', confirmedBy: null }
+        ],
+        invites: [],
+        brainstormTopics: [
+          {
+            topicId: 'b1',
+            title: 'Geschenk Papa',
+            notes: [
+              {
+                noteId: 'n1',
+                text: 'Gutschein',
+                createdBy: 'user_1',
+                score: 2,
+                highlighted: true,
+                comments: [
+                  { commentId: 'c1', text: 'Gut für einen Kaffee', createdBy: 'user_2' }
+                ]
+              },
+              {
+                noteId: 'n2',
+                text: 'Geld',
+                createdBy: 'user_2',
+                score: 1,
+                highlighted: false,
+                comments: []
+              }
+            ]
+          }
+        ],
+        activeBrainstormId: 'b1'
+      };
+    }
+
+    const users = {
+      user_1: 'Luca',
+      user_2: 'Lea'
+    };
+
+    function saveState() {
+      localStorage.setItem(STORAGE_KEY, JSON.stringify(state));
+    }
+
+    function fmtDate(value) {
+      return new Date(value).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function fmtTime(value) {
+      return new Date(value).toLocaleTimeString('de-DE', { hour: '2-digit', minute: '2-digit' });
+    }
+
+    function updateStats() {
+      document.getElementById('shoppingCount').textContent = state.items.length;
+      document.getElementById('eventCount').textContent = state.events.length;
+      document.getElementById('vacationCount').textContent = state.vacations.length;
+      document.getElementById('confirmedCount').textContent = state.vacations.filter(v => v.status === 'confirmed').length;
+    }
+
+    function fmtInviteDate(value) {
+      if (!value) return 'neu';
+      return new Date(value).toLocaleDateString('de-DE', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    }
+
+    function renderInvites() {
+      if (!Array.isArray(state.invites)) {
+        state.invites = [];
+      }
+
+      elements.sharedConnectionsList.innerHTML = '';
+      elements.inviteList.innerHTML = '';
+
+      const emptyState = document.createElement('div');
+      emptyState.className = 'brainstorm-empty';
+      emptyState.textContent = 'Noch keine Einladungen. Sende die erste Einladung an deine Freunde.';
+
+      if (!state.invites.length) {
+        elements.sharedConnectionsList.append(emptyState.cloneNode(true));
+        elements.inviteList.append(emptyState.cloneNode(true));
+      } else {
+        const pendingCount = state.invites.filter(invite => invite.status === 'pending').length;
+        if (pendingCount > 0) {
+          const pendingInfo = document.createElement('div');
+          pendingInfo.className = 'invite-status-message';
+          pendingInfo.textContent = `${pendingCount} Einladung${pendingCount === 1 ? '' : 'en'} warten noch auf Bestätigung.`;
+          elements.sharedConnectionsList.prepend(pendingInfo);
+        }
+
+        state.invites.forEach(invite => {
+          const item = document.createElement('div');
+          item.className = `invite-item ${invite.status}`;
+
+          const copy = document.createElement('div');
+          const email = document.createElement('div');
+          email.className = 'invite-email';
+          email.textContent = invite.email;
+
+          const status = document.createElement('div');
+          status.className = 'invite-state-text';
+          status.textContent = invite.status === 'verified'
+            ? `Verifiziert • ${fmtInviteDate(invite.verifiedAt)}`
+            : `Warte auf Verifizierung • eingeladen ${fmtInviteDate(invite.invitedAt)}`;
+
+          copy.append(email, status);
+
+          const action = document.createElement('div');
+          const actionButton = document.createElement('button');
+          actionButton.type = 'button';
+          if (invite.status === 'verified') {
+            actionButton.className = 'ghost-button';
+            actionButton.textContent = 'Bestätigt';
+            actionButton.disabled = true;
+          } else {
+            actionButton.className = 'confirm-button';
+            actionButton.textContent = 'Bestätigen';
+            actionButton.addEventListener('click', () => {
+              invite.status = 'verified';
+              invite.verifiedAt = new Date().toISOString();
+              saveState();
+              render();
+            });
+          }
+
+          action.append(actionButton);
+          item.append(copy, action);
+          elements.sharedConnectionsList.append(item);
+
+          const modalItem = document.createElement('div');
+          modalItem.className = `invite-item ${invite.status}`;
+
+          const modalCopy = document.createElement('div');
+          const modalEmail = document.createElement('div');
+          modalEmail.className = 'invite-email';
+          modalEmail.textContent = invite.email;
+
+          const modalStatus = document.createElement('div');
+          modalStatus.className = 'invite-state-text';
+          modalStatus.textContent = invite.status === 'verified'
+            ? `Als verifiziert bestätigt • ${fmtInviteDate(invite.verifiedAt)}`
+            : `Einladung ausstehend • gesendet ${fmtInviteDate(invite.invitedAt)}`;
+
+          modalCopy.append(modalEmail, modalStatus);
+
+          const modalAction = document.createElement('div');
+          const modalActionButton = document.createElement('button');
+          modalActionButton.type = 'button';
+          if (invite.status === 'verified') {
+            modalActionButton.className = 'ghost-button';
+            modalActionButton.textContent = 'Bestätigt';
+            modalActionButton.disabled = true;
+          } else {
+            modalActionButton.className = 'confirm-button';
+            modalActionButton.textContent = 'Bestätigen';
+            modalActionButton.addEventListener('click', () => {
+              invite.status = 'verified';
+              invite.verifiedAt = new Date().toISOString();
+              saveState();
+              render();
+            });
+          }
+
+          modalAction.append(modalActionButton);
+          modalItem.append(modalCopy, modalAction);
+          elements.inviteList.append(modalItem);
+        });
+      }
+    }
+
+    function renderShopping() {
+      elements.shoppingList.innerHTML = '';
+      state.items.sort((a,b) => Number(a.isDone)-Number(b.isDone)).forEach(item => {
+        const li = document.createElement('li');
+        li.className = `shopping-item ${item.isDone ? 'done' : ''}`;
+
+        const left = document.createElement('div');
+        left.className = 'item-left';
+
+        const checkbox = document.createElement('input');
+        checkbox.type = 'checkbox';
+        checkbox.checked = item.isDone;
+        checkbox.addEventListener('change', () => {
+          item.isDone = checkbox.checked;
+          saveState();
+          render();
+        });
+
+        const content = document.createElement('div');
+        const title = document.createElement('div');
+        title.className = 'title';
+        title.textContent = item.title;
+
+        const meta = document.createElement('div');
+        meta.className = 'meta-text';
+        meta.textContent = `von ${users[item.createdBy]} · ${item.isDone ? 'erledigt' : 'offen'}`;
+
+        content.append(title, meta);
+        left.append(checkbox, content);
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-button';
+        deleteButton.textContent = 'Löschen';
+        deleteButton.addEventListener('click', () => {
+          state.items = state.items.filter(entry => entry.itemId !== item.itemId);
+          saveState();
+          render();
+        });
+
+        li.append(left, deleteButton);
+        elements.shoppingList.append(li);
+      });
+    }
+
+    function renderCalendar() {
+      elements.calendarFeed.innerHTML = '';
+      state.events.sort((a,b) => new Date(a.startDateTime) - new Date(b.startDateTime)).forEach(event => {
+        const item = document.createElement('article');
+        item.className = 'event-item';
+
+        const dot = document.createElement('span');
+        dot.className = `event-dot ${event.type}`;
+
+        const main = document.createElement('div');
+        main.className = 'event-main';
+
+        const details = document.createElement('div');
+        details.className = 'event-details';
+
+        const title = document.createElement('h3');
+        title.textContent = event.title;
+
+        const time = document.createElement('p');
+        time.className = 'tiny-text';
+        time.textContent = `${fmtDate(event.startDateTime)} · ${fmtTime(event.startDateTime)} – ${fmtTime(event.endDateTime)}`;
+
+        const createdBy = document.createElement('p');
+        createdBy.className = 'meta-text';
+        createdBy.textContent = `Erstellt von ${users[event.createdBy]}`;
+
+        const chip = document.createElement('span');
+        chip.className = `event-chip ${event.type}`;
+        chip.textContent = event.type;
+
+        details.append(title, time, createdBy, chip);
+        main.append(dot, details);
+        item.append(main);
+        elements.calendarFeed.append(item);
+      });
+    }
+
+    function renderVacations() {
+      elements.vacationList.innerHTML = '';
+      state.vacations.forEach(vacation => {
+        const item = document.createElement('article');
+        item.className = `vacation-item ${vacation.status}`;
+
+        const main = document.createElement('div');
+        main.className = 'vacation-main';
+
+        const title = document.createElement('h3');
+        title.textContent = `${vacation.title}${vacation.status === 'proposed' ? ' (Vorschlag)' : ' (fix)'}`;
+
+        const period = document.createElement('p');
+        period.className = 'vacation-copy';
+        period.textContent = `${fmtDate(vacation.startDate)} – ${fmtDate(vacation.endDate)}`;
+
+        const status = document.createElement('p');
+        status.className = 'meta-text';
+        status.textContent = vacation.status === 'confirmed'
+          ? `Bestätigt von ${users[vacation.confirmedBy]}`
+          : `Vorgeschlagen von ${users[vacation.createdBy]}`;
+
+        main.append(title, period, status);
+
+        const action = document.createElement('div');
+        const button = document.createElement('button');
+        button.className = 'confirm-button';
+        button.textContent = vacation.status === 'confirmed' ? 'Bestätigt' : 'Bestätigen';
+        button.disabled = vacation.status === 'confirmed';
+        if (vacation.status === 'proposed') {
+          button.addEventListener('click', () => {
+            vacation.status = 'confirmed';
+            vacation.confirmedBy = state.activeUserId;
+            saveState();
+            render();
+          });
+        }
+
+        action.append(button);
+        item.append(main, action);
+        elements.vacationList.append(item);
+      });
+    }
+
+    function renderBrainstorm() {
+      if (!Array.isArray(state.brainstormTopics)) {
+        state.brainstormTopics = [];
+      }
+
+      if (!state.brainstormTopics.length) {
+        state.activeBrainstormId = null;
+      } else if (!state.activeBrainstormId || !state.brainstormTopics.find(topic => topic.topicId === state.activeBrainstormId)) {
+        state.activeBrainstormId = state.brainstormTopics[0].topicId;
+      }
+
+      elements.brainstormTopicList.innerHTML = '';
+      state.brainstormTopics.forEach(topic => {
+        const button = document.createElement('button');
+        button.className = `brainstorm-topic-button ${topic.topicId === state.activeBrainstormId ? 'active' : ''}`;
+        button.textContent = topic.title;
+        button.addEventListener('click', () => {
+          state.activeBrainstormId = topic.topicId;
+          saveState();
+          render();
+        });
+        elements.brainstormTopicList.append(button);
+      });
+
+      elements.brainstormDetail.innerHTML = '';
+      const activeTopic = state.brainstormTopics.find(topic => topic.topicId === state.activeBrainstormId);
+
+      if (!activeTopic) {
+        const empty = document.createElement('div');
+        empty.className = 'brainstorm-empty';
+        empty.textContent = 'Erstelle zuerst ein Thema, dann kannst du Ideen sammeln.';
+        elements.brainstormDetail.append(empty);
+        return;
+      }
+
+      const header = document.createElement('div');
+      header.className = 'brainstorm-header';
+
+      const title = document.createElement('h3');
+      title.textContent = activeTopic.title;
+
+      const meta = document.createElement('p');
+      meta.className = 'meta-text';
+      meta.textContent = `${activeTopic.notes.length} Ideen gesammelt · ${activeTopic.notes.filter(note => note.highlighted).length} hervorgehoben`;
+
+      header.append(title, meta);
+
+      const entryForm = document.createElement('form');
+      entryForm.className = 'brainstorm-entry-form';
+
+      const entryInput = document.createElement('input');
+      entryInput.type = 'text';
+      entryInput.placeholder = 'z. B. Gutschein, Geld, DIY...';
+      entryInput.maxLength = 60;
+      entryInput.required = true;
+
+      const submit = document.createElement('button');
+      submit.className = 'primary-button';
+      submit.type = 'submit';
+      submit.textContent = '+ Idee hinzufügen';
+
+      entryForm.append(entryInput, submit);
+      entryForm.addEventListener('submit', (event) => {
+        event.preventDefault();
+        const value = entryInput.value.trim();
+        if (!value) return;
+
+        activeTopic.notes.push({
+          noteId: crypto.randomUUID(),
+          text: value,
+          createdBy: state.activeUserId,
+          score: 0,
+          highlighted: false,
+          comments: []
+        });
+
+        saveState();
+        render();
+      });
+
+      const noteList = document.createElement('div');
+      noteList.className = 'brainstorm-note-list';
+
+      activeTopic.notes.forEach(note => {
+        note.comments = Array.isArray(note.comments) ? note.comments : [];
+        note.highlighted = Boolean(note.highlighted);
+        note.score = Number.isFinite(Number(note.score)) ? Number(note.score) : 0;
+
+        const noteItem = document.createElement('article');
+        noteItem.className = `brainstorm-note ${note.highlighted ? 'highlighted' : ''}`;
+
+        const noteHeader = document.createElement('div');
+        noteHeader.className = 'brainstorm-note-header';
+
+        const noteText = document.createElement('p');
+        noteText.textContent = note.text;
+
+        const actions = document.createElement('div');
+        actions.className = 'brainstorm-note-actions';
+
+        const highlightButton = document.createElement('button');
+        highlightButton.className = 'delete-button';
+        highlightButton.textContent = note.highlighted ? 'Hervorhebung löschen' : 'Highlight setzen';
+        highlightButton.addEventListener('click', () => {
+          note.highlighted = !note.highlighted;
+          saveState();
+          render();
+        });
+
+        const deleteButton = document.createElement('button');
+        deleteButton.className = 'delete-button';
+        deleteButton.textContent = 'Entfernen';
+        deleteButton.addEventListener('click', () => {
+          activeTopic.notes = activeTopic.notes.filter(item => item.noteId !== note.noteId);
+          saveState();
+          render();
+        });
+
+        actions.append(highlightButton, deleteButton);
+        noteHeader.append(noteText, actions);
+
+        const voteRow = document.createElement('div');
+        voteRow.className = 'brainstorm-vote-row';
+
+        const downButton = document.createElement('button');
+        downButton.className = 'vote-button';
+        downButton.textContent = '👎';
+        downButton.addEventListener('click', () => {
+          note.score = Number.isFinite(Number(note.score)) ? Number(note.score) : 0;
+          note.score -= 1;
+          saveState();
+          render();
+        });
+
+        const score = document.createElement('div');
+        score.className = 'vote-score';
+        score.textContent = Number.isFinite(Number(note.score)) ? Number(note.score) : 0;
+
+        const upButton = document.createElement('button');
+        upButton.className = 'vote-button';
+        upButton.textContent = '👍';
+        upButton.addEventListener('click', () => {
+          note.score = Number.isFinite(Number(note.score)) ? Number(note.score) : 0;
+          note.score += 1;
+          saveState();
+          render();
+        });
+
+        voteRow.append(downButton, score, upButton);
+
+        const commentList = document.createElement('div');
+        commentList.className = 'brainstorm-comment-list';
+        if (Array.isArray(note.comments)) {
+          note.comments.forEach(comment => {
+            const commentItem = document.createElement('div');
+            commentItem.className = 'brainstorm-comment';
+            commentItem.textContent = `💬 ${comment.text}`;
+            commentList.append(commentItem);
+          });
+        }
+
+        const commentForm = document.createElement('form');
+        commentForm.className = 'brainstorm-comment-form';
+
+        const commentInput = document.createElement('input');
+        commentInput.type = 'text';
+        commentInput.placeholder = 'Kommentar schreiben';
+        commentInput.maxLength = 80;
+        commentInput.required = true;
+
+        const commentSubmit = document.createElement('button');
+        commentSubmit.className = 'primary-button';
+        commentSubmit.type = 'submit';
+        commentSubmit.textContent = 'Kommentar';
+
+        commentForm.append(commentInput, commentSubmit);
+        commentForm.addEventListener('submit', (event) => {
+          event.preventDefault();
+          const commentText = commentInput.value.trim();
+          if (!commentText) return;
+
+          if (!Array.isArray(note.comments)) {
+            note.comments = [];
+          }
+
+          note.comments.push({
+            commentId: crypto.randomUUID(),
+            text: commentText,
+            createdBy: state.activeUserId
+          });
+
+          saveState();
+          render();
+        });
+
+        noteItem.append(noteHeader, voteRow, commentList, commentForm);
+        noteList.append(noteItem);
+      });
+
+      elements.brainstormDetail.append(header, entryForm, noteList);
+    }
+
+    function render() {
+      updateStats();
+      renderShopping();
+      renderCalendar();
+      renderVacations();
+      renderBrainstorm();
+    }
+
+    document.querySelectorAll('.person').forEach(card => {
+      card.addEventListener('click', () => {
+        document.querySelectorAll('.person').forEach(item => item.classList.remove('selected'));
+        card.classList.add('selected');
+        state.activeUserId = card.dataset.userId;
+        saveState();
+        render();
+      });
+    });
+
+    elements.shoppingForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const value = elements.shoppingInput.value.trim();
+      if (!value) return;
+      state.items.push({ itemId: crypto.randomUUID(), title: value, createdBy: state.activeUserId, isDone: false });
+      saveState();
+      elements.shoppingForm.reset();
+      render();
+    });
+
+    elements.eventForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const start = new Date(`${elements.eventDate.value}T${elements.eventStart.value}`);
+      const duration = Number(elements.eventDuration.value);
+      const end = new Date(start.getTime() + duration * 60 * 1000);
+
+      state.events.push({
+        eventId: crypto.randomUUID(),
+        title: elements.eventTitle.value.trim(),
+        startDateTime: start.toISOString(),
+        endDateTime: end.toISOString(),
+        type: elements.eventType.value,
+        createdBy: state.activeUserId
+      });
+
+      saveState();
+      elements.eventForm.reset();
+      elements.eventStart.value = '18:00';
+      render();
+    });
+
+    elements.vacationForm.addEventListener('submit', event => {
+      event.preventDefault();
+      state.vacations.push({
+        vacationId: crypto.randomUUID(),
+        title: elements.vacationTitle.value.trim() || 'Urlaub',
+        startDate: elements.vacationStart.value,
+        endDate: elements.vacationEnd.value,
+        status: 'proposed',
+        createdBy: state.activeUserId,
+        confirmedBy: null
+      });
+      saveState();
+      elements.vacationForm.reset();
+      elements.vacationTitle.value = 'Urlaub';
+      render();
+    });
+
+    elements.brainstormTopicForm.addEventListener('submit', event => {
+      event.preventDefault();
+      const topicTitle = elements.brainstormTopicInput.value.trim();
+      if (!topicTitle) return;
+
+      const newTopic = {
+        topicId: crypto.randomUUID(),
+        title: topicTitle,
+        notes: []
+      };
+
+      state.brainstormTopics.push(newTopic);
+      state.activeBrainstormId = newTopic.topicId;
+      saveState();
+      elements.brainstormTopicForm.reset();
+      render();
+    });
+
+    window.addEventListener('storage', event => {
+      if (event.key === STORAGE_KEY && event.newValue) {
+        Object.assign(state, JSON.parse(event.newValue));
+        render();
+      }
+    });
+
+    const today = new Date();
+    const defaultDate = today.toISOString().split('T')[0];
+    elements.eventDate.value = defaultDate;
+    elements.vacationStart.value = defaultDate;
+    const nextWeek = new Date(today);
+    nextWeek.setDate(today.getDate() + 7);
+    elements.vacationEnd.value = nextWeek.toISOString().split('T')[0];
+
+    render();
+  </script>
+</body>
+</html>
